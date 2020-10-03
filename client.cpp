@@ -1,16 +1,20 @@
 // Taylor Morgan - tm2045
 // Khalil Markham - km1783
 
+#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include <iostream>
-#include <sys/types.h>   // defines types (like size_t)
-#include <sys/socket.h>  // defines socket class
-#include <netinet/in.h>  // defines port numbers for (internet) sockets, some address structures, and constants
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
-#include <iostream>
 #include <fstream>
-#include <arpa/inet.h>   // if you want to use inet_addr() function
-#include <string.h>
-#include <unistd.h>
+#include <arpa/inet.h>
+#include "packet.h"
+#include "client.h"
+#include <math.h>
+#include <time.h>
 
 using namespace std;
 
