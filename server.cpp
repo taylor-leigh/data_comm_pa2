@@ -18,7 +18,7 @@
 
 using namespace std;
 
-int main(int argc, *argv[]){
+int main(int argc, char *argv[]){
 
   struct sockaddr_in server;
   struct sockaddr_in client;
@@ -26,7 +26,7 @@ int main(int argc, *argv[]){
   socklen_t clen = sizeof(client);
   char payload[512];
   char ack[512];
-  int port = argv[1];
+  int port = atoi(argv[1]);
 
   if ((mysocket=socket(AF_INET, SOCK_DGRAM, 0))==-1)
     cout << "Error in socket creation.\n";
@@ -34,7 +34,7 @@ int main(int argc, *argv[]){
   memset((char *) &server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_port = htons(port);
-  server.sin_addr.s_addr = hton1(INADDR_ANY);
+  server.sin_addr.s_addr = htonl(INADDR_ANY);
 
   if (bind(mysocket, (struct sockaddr *)&server, sizeof(server)) == -1)
     cout << "Error in binding.\n";

@@ -12,9 +12,10 @@
 #include <fstream>
 #include <arpa/inet.h>
 #include "packet.h"
-#include "client.h"
+//#include "client.h"
 #include <math.h>
 #include <time.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -28,7 +29,7 @@ int main(int argc, char *argv[]){
   socklen_t slen = sizeof(server);
   char payload[512];
   char ack[512];
-  int port = argv[2];
+  int port = atoi(argv[2]);
 
   if ((mysocket=socket (AF_INET, SOCK_DGRAM, 0))==-1)
     cout << "Error in creating socket.\n";
@@ -46,7 +47,7 @@ int main(int argc, char *argv[]){
   server.sin_port = htons(port);
   bcopy((char *)s->h_addr,
         (char *)&server.sin_addr.s_addr,
-	s->h_length;
+	s->h_length);
 
   if (sendto(mysocket, payload, 30, 0, (struct sockaddr *)&server, slen)==-1)
     cout << "Error in sendto function.\n";
