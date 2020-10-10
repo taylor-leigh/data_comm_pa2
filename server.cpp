@@ -1,6 +1,9 @@
 // Taylor Morgan - tm2045
 // Khalil Markham - km1783
 
+// sources
+// lecture notes and recordings, code from previous programming assignment
+
 #include <stdlib.h>
 #include <cstring>
 #include <cstdlib>
@@ -41,9 +44,11 @@ int main(int argc, char *argv[]){
 
   if (recvfrom(mysocket, payload, 512, 0, (struct sockaddr *)&client, &clen)==-1)
     cout << "Failed to receive.\n";
+  cout << "got payload " << payload << endl;
 
   if (sendto(mysocket, ack, 512, 0, (struct sockaddr *)&client, clen)==-1)
     cout << "Error in sendto function.\n";
+  cout << "sent ack " << ack << endl;
 
   close(mysocket);
   return 0;
