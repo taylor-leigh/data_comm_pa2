@@ -5,6 +5,8 @@
 // lecture notes and recordings, code from previous programming assignment
 // http://stackoverflow.com/questions/29395081/break-a-file-into-chunks-and-send-it-as-binary-from-client-to-server-in-c-using
 // https://mycodecamp.blogspot.com/2019/03/c-program-to-implement-go-back-n.html
+// https://tutorialspoint.com/c-standard-library/c_function_difftime.htm
+// https://w3schools.com/cpp/cpp_files.asp
 
 #include <stdlib.h>
 #include <cstring>
@@ -35,10 +37,10 @@ int main(int argc, char *argv[]){
   socklen_t slen = sizeof(server);
   char payload[512];
   char spayload[512];	// for the serialized payload
-  char ack[512];
+  char r_ack[512];
   int port = atoi(argv[2]);
   int N = 7;	// window size is 7
-  int seqnum;
+  int seqnum, ack_seqnum;
 
   // for debugging
   //cout << "using port " << port << endl;
@@ -47,13 +49,15 @@ int main(int argc, char *argv[]){
   if ((mysocket=socket (AF_INET, SOCK_DGRAM, 0))==-1)
     cout << "Error in creating socket.\n";
 
-  // TODO: create log files ! clientseqnum.log and clientack.log
+  // create log files
+  fstream clientseqnum("clientseqnum.log");
+  fstream clientack("clientack.log");
 
-  // get name of file to transfer
+  // get name of input file
   char* filename;
   filename = argv[3];
 
-  // open file
+  // open input file
   ifstream file_to_send;
   file_to_send.open(filename);
   //cout << "opened file " << filename << endl;
@@ -89,24 +93,29 @@ int main(int argc, char *argv[]){
     if (sendto(mysocket, spayload, 30, 0, (struct sockaddr *)&server, slen)==-1)
       cout << "Error in sendto function.\n";
     // TODO: put seqnum of sent packet into clientseqnum.log + newline
+    clientseqnum << seqnum << "\n";
     cout << "sent payload " << payload << endl;
 
-    // TODO: put timer and interrupt here
-    if (recvfrom(mysocket, ack, 512, 0, (struct sockaddr *)&server, &slen)==-1)
+    // TODO: put 2 second timer and interrupt here
+    if (recvfrom(mysocket, r_ack, 30, 0, (struct sockaddr *)&server, &slen)==-1)
       cout << "Error getting ack" << endl;
-    // TODO: put seqnum of ack packet into clientack.log + newline
-    cout << "got ack " << ack << endl;
+    // TODO: get seqnum of ack packet
+    clientack << ack_seqnum << "\n";
+    cout << "got ack" << endl;
   }
 
   // EOT packet
   packet EOT(3, seqnum, 0, NULL);
   EOT.serialize(spayload);
-  // TODO: serialize this ? can't send the packet
   if (sendto(mysocket, spayload, 30, 0, (struct sockaddr *)&server, slen)==-1)
     cout << "Error sending EOT packet." << endl;
   cout << "sent EOT packet" << endl;
 
+  // close log files and socket
+  clientseqnum.close();
+  clientack.close();
   close(mysocket);
+
   return 0;
 
 }
