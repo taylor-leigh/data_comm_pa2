@@ -4,6 +4,7 @@
 // sources
 // lecture notes and recordings, code from previous programming assignment
 // http://stackoverflow.com/questions/29395081/break-a-file-into-chunks-and-send-it-as-binary-from-client-to-server-in-c-using
+// https://mycodecamp.blogspot.com/2019/03/c-program-to-implement-go-back-n.html
 
 #include <stdlib.h>
 #include <cstring>
@@ -57,14 +58,28 @@ int main(int argc, char *argv[]){
 	s->h_length);
 
   // split the file into packets and serialize
+  while (file_to_send.peek() != EOF) {
 
-  if (sendto(mysocket, payload, 30, 0, (struct sockaddr *)&server, slen)==-1)
-    cout << "Error in sendto function.\n";
-  cout << "sent payload " << payload << endl;
+    // splits file into 30-char packets
+    for (int i = 0; i < 30; i++) {
+      char nextchar;
+      if (file_to_send.peek() != EOF) {
+        nextchar = file_to_send.get();
+      } else {
+        nextchar = '\0';
+      }
+      payload[i] = nextchar;
+    }
 
-  if (recvfrom(mysocket, ack, 512, 0, (struct sockaddr *)&server, &slen)==-1)
-    cout << "Error getting ack" << endl;
-  cout << "got ack " << ack << endl;
+    // send payload to server
+    if (sendto(mysocket, payload, 30, 0, (struct sockaddr *)&server, slen)==-1)
+      cout << "Error in sendto function.\n";
+    cout << "sent payload " << payload << endl;
+
+    if (recvfrom(mysocket, ack, 512, 0, (struct sockaddr *)&server, &slen)==-1)
+      cout << "Error getting ack" << endl;
+    cout << "got ack " << ack << endl;
+  }
 
   close(mysocket);
   return 0;
