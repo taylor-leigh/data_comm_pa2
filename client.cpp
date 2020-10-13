@@ -23,7 +23,7 @@
 #include "packet.h"
 #include "packet.cpp"
 #include <math.h>
-#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 using namespace std;
@@ -43,9 +43,9 @@ int main(int argc, char *argv[]){
   int base = 0;
   int N = 7;	// window size is 7
   int seqnum = 0;
-  packet *window[100];	// a packet array for the window
+  //packet *window[N];	// a packet array for the window
   int a_seqnum = 0;
-  time_t start, current;
+  int timeout = 2;
 
   // for debugging
   //cout << "using port " << port << endl;
@@ -55,10 +55,8 @@ int main(int argc, char *argv[]){
     cout << "Error in creating socket.\n";
 
   // create log files
-  ofstream clientseqnum;
-  ofstream clientack;
-  clientseqnum.open("clientseqnum.log");
-  clientack.open("clientack.log");
+  ofstream clientseqnum("clientseqnum.log");
+  ofstream clientack("clientack.log");
 
   // get name of input file
   char* filename;
@@ -104,14 +102,17 @@ int main(int argc, char *argv[]){
       cout << "sent payload with seqnum " << seqnum << endl;
 
       // add packet to window
-      window[seqnum] = &pack;	// TODO: do i even need this ?
+      //window[seqnum] = &pack;	// TODO: do i even need this ?
 
+      // set timeout to 2 seconds on first transmitted packet
       if (base == seqnum)
-        time(&start);
+        if (setsockopt(mysocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+          //cout << "timeout!" << endl;	//oops why is this printing every time
+        }
       
       seqnum++;
 
-      // TODO: add interrupt + resends ?? here
+      // listen for acks from server
       if (recvfrom(mysocket, r_ack, 30, 0, (struct sockaddr *)&server, &slen)==-1)
         cout << "Error getting ack" << endl;
 
@@ -123,6 +124,8 @@ int main(int argc, char *argv[]){
       // add to clientack file then remove from the window array
       clientack << a_seqnum << "\n";
       cout << "got ack " << a_seqnum << endl;
+
+      //delete window[seqnum-base]; 	//this feels horribly wrong	
 
       base++;
     }
