@@ -43,8 +43,9 @@ int main(int argc, char *argv[]){
   int base = 0;
   int N = 7;	// window size is 7
   int seqnum = 0;
-  packet *window[8];	// a packet array for the window
+  packet *window[100];	// a packet array for the window
   int a_seqnum = 0;
+  time_t start, current;
 
   // for debugging
   //cout << "using port " << port << endl;
@@ -54,8 +55,10 @@ int main(int argc, char *argv[]){
     cout << "Error in creating socket.\n";
 
   // create log files
-  fstream clientseqnum("clientseqnum.log");
-  fstream clientack("clientack.log");
+  ofstream clientseqnum;
+  ofstream clientack;
+  clientseqnum.open("clientseqnum.log");
+  clientack.open("clientack.log");
 
   // get name of input file
   char* filename;
@@ -84,7 +87,7 @@ int main(int argc, char *argv[]){
         if (file_to_send.peek() != EOF) {
           nextchar = file_to_send.get();
         } else {
-          break; //do i wanna break here ? or just get rid of the else entirely
+          file_to_send.close();
         }
         payload[i] = nextchar;
       }
@@ -104,8 +107,7 @@ int main(int argc, char *argv[]){
       window[seqnum] = &pack;	// TODO: do i even need this ?
 
       if (base == seqnum)
-        // start 2 second timer
-        int placeholder;
+        time(&start);
       
       seqnum++;
 
@@ -122,13 +124,11 @@ int main(int argc, char *argv[]){
       clientack << a_seqnum << "\n";
       cout << "got ack " << a_seqnum << endl;
 
-      //delete window[a_seqnum];
-
       base++;
     }
   }
 
-  // EOT packet
+  // create and send EOT packet
   packet EOT(3, seqnum, 0, NULL);
   EOT.serialize(spayload);
   if (sendto(mysocket, spayload, 30, 0, (struct sockaddr *)&server, slen)==-1)
@@ -136,13 +136,24 @@ int main(int argc, char *argv[]){
   clientseqnum << seqnum << "\n";
   cout << "sent EOT packet" << endl;
 
-  // TODO: listen for EOT ack and add to clientack.log
+  // listen for EOT ack
+  if (recvfrom(mysocket, r_ack, 30, 0, (struct sockaddr *)&server, &slen)==-1)
+    cout << "Error getting EOT ack" << endl;
+  
+  // add EOT ack data to clientack.log
+  packet a_pack(0, a_seqnum, 0, r_ack);		// this should reset type to 2
+  a_pack.deserialize(r_ack);
+  a_seqnum = a_pack.getSeqNum();
+  clientack << a_seqnum << "\n";
 
-  // TODO: put this in an if ? to make sure EOF ack is received
-  // close log files and socket
-  clientseqnum.close();
-  clientack.close();
-  close(mysocket);
+  // test type to make sure the ack received is an EOT ack
+  if (a_pack.getType() == 2) {
+    cout << "got EOT ack" << endl; 
+    // close log files and socket
+    clientseqnum.close();
+    clientack.close();
+    close(mysocket);
+  }
 
   return 0;
 

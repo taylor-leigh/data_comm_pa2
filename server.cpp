@@ -49,8 +49,8 @@ int main(int argc, char *argv[]){
     cout << "Error in binding.\n";
 
   // create output files
-  fstream arrival("arrival.log");
-  fstream output("fileName");
+  ofstream arrival("arrival.log");
+  ofstream output("fileName");
 
   while (1) {
 
