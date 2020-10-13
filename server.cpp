@@ -3,6 +3,7 @@
 
 // sources
 // lecture notes and recordings, code from previous programming assignment
+// https://github.com/8tiqa/go-back-n-udp
 
 #include <stdlib.h>
 #include <cstring>
