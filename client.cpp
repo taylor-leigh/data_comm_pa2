@@ -110,7 +110,11 @@ int main(int argc, char *argv[]){
           //cout << "timeout!" << endl;	//oops why is this printing every time
         }
       
-      seqnum++;
+      if (seqnum < base + N) {
+        seqnum++;
+      } else {
+         seqnum = 0;
+      }
 
       // listen for acks from server
       if (recvfrom(mysocket, r_ack, 30, 0, (struct sockaddr *)&server, &slen)==-1)
@@ -125,9 +129,7 @@ int main(int argc, char *argv[]){
       clientack << a_seqnum << "\n";
       cout << "got ack " << a_seqnum << endl;
 
-      //delete window[seqnum-base]; 	//this feels horribly wrong	
-
-      base++;
+      //delete window[0]; 	//this feels horribly wrong	
     }
   }
 
