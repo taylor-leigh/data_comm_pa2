@@ -8,6 +8,7 @@
 // https://tutorialspoint.com/c-standard-library/c_function_difftime.htm
 // https://w3schools.com/cpp/cpp_files.asp
 // https://github.com/8tiqa/go-back-n-udp
+// https://cs.cmu.edu/~srini/15-441/F01.full/www/assignments/P2/htmlsim_split/node12.html
 
 #include <stdlib.h>
 #include <cstring>
@@ -21,7 +22,6 @@
 #include <arpa/inet.h>
 #include "packet.h"
 #include "packet.cpp"
-//#include "client.h"
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
@@ -36,14 +36,15 @@ int main(int argc, char *argv[]){
   struct sockaddr_in server;
   int mysocket = 0;
   socklen_t slen = sizeof(server);
-  char payload[512];
-  char spayload[512];	// for the serialized payload
-  char r_ack[512];
+  char payload[37];
+  char spayload[37];	// for the serialized payload
+  char r_ack[37];
   int port = atoi(argv[2]);
   int base = 0;
   int N = 7;	// window size is 7
   int seqnum = 0;
-  packet *window[N];	// a packet array for the window
+  packet *window[8];	// a packet array for the window
+  int a_seqnum = 0;
 
   // for debugging
   //cout << "using port " << port << endl;
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]){
   // split the file into packets, serialize, send, and wait for acks
   while (file_to_send.peek() != EOF) {
 
-    if (seqnum < base + N) {	// checks if window is full
+    if (seqnum <= base + N) {	// checks if window is full
 
       // splits file into 30-char chunks
       for (int i = 0; i < 30; i++) {
@@ -89,30 +90,42 @@ int main(int argc, char *argv[]){
       }
 
       // put 30-char chunks into packets & serialize
-      packet pack(1, seqnum, 30, payload);
+      packet pack(1, seqnum, 37, payload);
       pack.serialize(spayload);
 
       // send payload to server
-      if (sendto(mysocket, spayload, 40, 0, (struct sockaddr *)&server, slen)==-1)
+      if (sendto(mysocket, spayload, 37, 0, (struct sockaddr *)&server, slen)==-1)
         cout << "Error in sendto function.\n";
       // put seqnum of sent packet into clientseqnum.log + newline
       clientseqnum << seqnum << "\n";
       cout << "sent payload with seqnum " << seqnum << endl;
 
-      // add packet to window and increment seqnum for next loop
-      window[seqnum] = &pack;
+      // add packet to window
+      window[seqnum] = &pack;	// TODO: do i even need this ?
+
+      if (base == seqnum)
+        // start 2 second timer
+        int placeholder;
+      
       seqnum++;
 
-      // TODO: put 2 second timer and interrupt here
-      if (recvfrom(mysocket, r_ack, 40, 0, (struct sockaddr *)&server, &slen)==-1)
+      // TODO: add interrupt + resends ?? here
+      if (recvfrom(mysocket, r_ack, 30, 0, (struct sockaddr *)&server, &slen)==-1)
         cout << "Error getting ack" << endl;
-      // TODO: get seqnum of ack packet - do i need to deserialize ?
-      pack.deserialize(r_ack);	// TODO: does this even work ? something about this seems bad
-      // then remove it from the window array ig
-      clientack << r_ack[2] << "\n";
-      cout << "got ack " << r_ack[2] << endl;
-    }
 
+      // get seqnum of ack packet
+      packet a_pack(0, a_seqnum, 0, r_ack);
+      a_pack.deserialize(r_ack);
+      a_seqnum = a_pack.getSeqNum();
+
+      // add to clientack file then remove from the window array
+      clientack << a_seqnum << "\n";
+      cout << "got ack " << a_seqnum << endl;
+
+      //delete window[a_seqnum];
+
+      base++;
+    }
   }
 
   // EOT packet

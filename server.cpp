@@ -32,7 +32,8 @@ int main(int argc, char *argv[]){
   char payload[512];
   char s_ack[512];
   int port = atoi(argv[1]);
-  int seqnum;
+  int seqnum = 0;
+  packet *window[7];
 
   // create socker
   if ((mysocket=socket(AF_INET, SOCK_DGRAM, 0))==-1)
@@ -51,21 +52,45 @@ int main(int argc, char *argv[]){
   fstream arrival("arrival.log");
   fstream output("fileName");
 
-  if (recvfrom(mysocket, payload, 512, 0, (struct sockaddr *)&client, &clen)==-1)
-    cout << "Failed to receive.\n";
-  cout << "got payload" << endl;
-  // TODO: deserialize payload and write to fileName
-  // TODO: write seqnum to arrival.log + newline
+  while (1) {
 
-  // create ack packet
-  packet ack(0, seqnum, 0, NULL);
-  ack.serialize(s_ack);
+    if (recvfrom(mysocket, payload, 40, 0, (struct sockaddr *)&client, &clen)==-1)
+      cout << "Failed to receive.\n";
 
-  if (sendto(mysocket, s_ack, 30, 0, (struct sockaddr *)&client, clen)==-1)
+    // deserialize payload and write to fileName
+    packet rpack(1, seqnum, 40, payload);
+    rpack.deserialize(payload);
+    output << rpack.getData();
+
+    // for debugging
+    cout << "rpack has seqnum " << rpack.getSeqNum() << endl;
+    cout << "got payload " << payload << endl;
+
+    // write seqnum to arrival.log
+    seqnum = rpack.getSeqNum(); 	// TODO: figure out if this is dangerous
+    arrival << seqnum << "\n";
+
+    // TODO: BREAK ON EOT - should i do this here or elsewhere
+    if (rpack.getType() == 3)
+      break;
+
+    // create ack packet
+    packet ack(0, seqnum, 0, NULL);
+    ack.serialize(s_ack);
+
+    if (sendto(mysocket, s_ack, 40, 0, (struct sockaddr *)&client, clen)==-1)
+      cout << "Error in sendto function.\n";
+    cout << "sent ack with seqnum " << seqnum << endl;
+
+  }
+
+  // TODO: send EOT ack
+  packet eot_ack(2, seqnum, 0, NULL);
+  eot_ack.serialize(s_ack);
+
+  if (sendto(mysocket, s_ack, 40, 0, (struct sockaddr *)&client, clen)==-1)
     cout << "Error in sendto function.\n";
-  cout << "sent ack" << endl;
-
-  // TODO: deal with EOT packet so you know when to close
+  cout << "sent EOT ack" << endl;
 
   // close output files and socket
   arrival.close();
