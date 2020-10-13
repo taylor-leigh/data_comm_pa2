@@ -50,7 +50,7 @@ int main(int argc, char *argv[]){
 
   // create output files
   ofstream arrival("arrival.log");
-  ofstream output("fileName");
+  ofstream output("output.txt");
 
   while (1) {
 
